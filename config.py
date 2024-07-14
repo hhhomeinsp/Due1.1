@@ -1,106 +1,18 @@
+# config.py
 import streamlit as st
 import openai
 import pinecone
 import logging
-from utils import get_secret
+from secrets import get_secret
 
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-PINECONE_DIMENSION = 1536  # Set this to match your index dimension
-
-def get_secret(key, default=None):
-    return st.secrets.get(key, default)
 
 def set_page_config():
     st.set_page_config(page_title="DUE: Document Understanding Engine", layout="wide")
-    
-    # Apply custom CSS
-    st.markdown("""
-        <style>
-            /* Custom styles for buttons */
-            .stButton > button {
-                background-color: #2196F3;
-                color: white;
-                border: none;
-                padding: 10px 24px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 16px;
-                margin: 4px 2px;
-                cursor: pointer;
-                border-radius: 4px;
-                transition: background-color 0.3s;
-            }
-        
-            .stButton > button:hover {
-                background-color: #1976D2;
-            }
-
-            /* Custom styles for dropdowns (select boxes) */
-            .stSelectbox > div > div {
-                background-color: #2F3336;
-                color: white;
-                border: 1px solid #4A4A4A;
-                border-radius: 4px;
-            }
-
-            .stSelectbox > div > div:hover {
-                border-color: #4CAF50;
-            }
-
-            /* Style for the dropdown options */
-            .stSelectbox > div > div > ul {
-                background-color: #2F3336;
-                color: white;
-            }
-
-            .stSelectbox > div > div > ul > li:hover {
-                background-color: #3A3F42;
-            }
-
-            /* Custom styles for expanders */
-            .streamlit-expanderHeader {
-                background-color: #2F3336;
-                color: white;
-                border: 1px solid #4A4A4A;
-                border-radius: 4px;
-                padding: 10px;
-                margin-bottom: 10px;
-            }
-
-            .streamlit-expanderHeader:hover {
-                background-color: #3A3F42;
-            }
-
-            /* Custom styles for text inputs */
-            .stTextInput > div > div > input {
-                background-color: #2F3336;
-                color: white;
-                border: 1px solid #4A4A4A;
-                border-radius: 4px;
-                padding: 10px;
-            }
-
-            .stTextInput > div > div > input:focus {
-                border-color: #4CAF50;
-                box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
-            }
-
-            /* Ensure text color is white for all inputs */
-            .stTextInput, .stSelectbox, .stTextArea {
-                color: white !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    # Apply custom CSS here if needed
 
 def initialize_openai():
     openai.api_key = get_secret("OPENAI_API_KEY")
-    if not openai.api_key:
-        logger.error("OpenAI API key is not set.")
     return openai.api_key
 
 def initialize_pinecone():
