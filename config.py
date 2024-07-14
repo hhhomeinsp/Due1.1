@@ -110,9 +110,11 @@ def initialize_pinecone():
         return None
 
     try:
+        logger.info(f"Attempting to initialize Pinecone with environment: {pinecone_environment}")
         pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
         
         index_name = get_secret("PINECONE_INDEX_NAME", "thoth")
+        logger.info(f"Checking for index: {index_name}")
         
         if index_name not in pinecone.list_indexes():
             logger.warning(f"Index '{index_name}' does not exist. Attempting to create new index.")
@@ -127,6 +129,7 @@ def initialize_pinecone():
                 logger.error(f"Failed to create Pinecone index: {str(e)}")
                 return None
         
+        logger.info(f"Successfully connected to Pinecone index: {index_name}")
         return pinecone.Index(index_name)
     except Exception as e:
         logger.error(f"Failed to initialize Pinecone: {str(e)}")
