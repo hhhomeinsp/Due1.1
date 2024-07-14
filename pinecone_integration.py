@@ -150,16 +150,18 @@ class PineconeConnection:
             st.error(f"Error deleting questionnaire: {str(e)}")
             return False
 
-    def add_report(self, title, report_data):
+    def add_report(self, title, report):
         try:
-            id = str(uuid.uuid4())
-            self.index.upsert(vectors=[(id, [0]*1536, {
+            report_id = str(uuid.uuid4())
+            vector = get_embedding(json.dumps(report))  # Convert report to string for embedding
+            metadata = {
+                "type": "report",
                 "title": title,
-                "report": json.dumps(report_data),
-                "type": "report"
-            })])
-            logger.info(f"Report saved successfully with ID: {id}")
-            return id
+                "report": json.dumps(report)  # Store the entire report as a JSON string
+            }
+            self.index.upsert(vectors=[(report_id, vector, metadata)])
+            logger.info(f"Report added successfully with ID: {report_id}")
+            return report_id
         except Exception as e:
             logger.error(f"Error adding report: {str(e)}")
             return None
