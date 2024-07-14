@@ -240,7 +240,7 @@ def main():
                             with st.spinner("Generating report..."):
                                 documents = pinecone_connection.get_all_documents()
                                 progress_bar = st.progress(0)
-                                report = asyncio.run(generate_report(edited_questions, documents, progress_bar))
+                                report = generate_report(edited_questions, documents, progress_bar)
                             
                             logger.info(f"Report generated. Attempting to save...")
                             report_id = pinecone_connection.add_report(f"Report for {st.session_state['current_questionnaire']['title']}", report)
