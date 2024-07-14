@@ -2,6 +2,8 @@ import streamlit as st
 import openai
 import pinecone
 import logging
+from utils import get_secret
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -100,11 +102,6 @@ def initialize_openai():
     if not openai.api_key:
         logger.error("OpenAI API key is not set.")
     return openai.api_key
-
-import pinecone
-import logging
-
-logger = logging.getLogger(__name__)
 
 def initialize_pinecone():
     pinecone_api_key = get_secret("PINECONE_API_KEY")
