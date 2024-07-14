@@ -1,3 +1,4 @@
+# main.py
 import streamlit as st
 from config import set_page_config, initialize_openai, initialize_pinecone
 from database import PineconeConnection
