@@ -315,7 +315,7 @@ def main():
                                 st.write(text[:300] + "..." if len(text) > 300 else text)
                         
                         context = "\n".join([text for _, _, text, _ in similar_docs])
-                        prompt = f""
+                        prompt = f"""
                         Based on the following context, answer the question. If the answer is not in the context, say "I don't have enough information to answer that question."
 
                         Context: {context[:3000]}  # Limiting context to 3000 characters
