@@ -1,4 +1,4 @@
-import streamlit as st
+# utils.py
 import openai
 import docx
 import PyPDF2
@@ -6,16 +6,13 @@ import pandas as pd
 import io
 import logging
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from utils import get_secret
+from secrets import get_secret
 
 logger = logging.getLogger(__name__)
 
-def get_secret(key, default=None):
-    return st.secrets.get(key, default)
-
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 openai.api_key = get_secret("OPENAI_API_KEY")
 
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def get_embedding(text, model="text-embedding-ada-002"):
     try:
         response = openai.Embedding.create(input=[text], model=model)
@@ -25,7 +22,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
         logger.error(f"Error in get_embedding: {str(e)}")
         raise
 
-def chat_completion(messages, model="gpt-4o"):
+def chat_completion(messages, model="gpt-4"):
     try:
         response = openai.ChatCompletion.create(model=model, messages=messages)
         return response
