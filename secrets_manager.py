@@ -1,4 +1,4 @@
-# secrets.py
+# secret_manager.py
 import streamlit as st
 
 def get_secret(key, default=None):
