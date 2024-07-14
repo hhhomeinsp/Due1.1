@@ -22,7 +22,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
         logger.error(f"Error in get_embedding: {str(e)}")
         raise
 
-def chat_completion(messages, model="gpt-4"):
+def chat_completion(messages, model="gpt-4o"):
     try:
         response = openai.ChatCompletion.create(model=model, messages=messages)
         return response
