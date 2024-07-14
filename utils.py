@@ -78,10 +78,10 @@ def display_questionnaire(questions, prefix=""):
     
     return edited_questions
 
-async def generate_report(questions, documents, progress_bar):
+def generate_report(questions, documents, progress_bar):
     context = "\n".join([f"Title: {doc['title']}\n{doc['text']}" for doc in documents])
     
-    async def process_question(question):
+    def process_question(question):
         try:
             prompt = f"""
             Based on the following context, answer the given question. 
@@ -97,7 +97,7 @@ async def generate_report(questions, documents, progress_bar):
                 {"role": "user", "content": prompt}
             ]
             
-            response = await asyncio.to_thread(partial(chat_completion, messages))
+            response = chat_completion(messages)
             answer = response['choices'][0]['message']['content'].strip()
             return {
                 "question": question['question'],
@@ -112,10 +112,9 @@ async def generate_report(questions, documents, progress_bar):
                 "needs_assignment": True
             }
 
-    tasks = [process_question(question) for question in questions]
-    report = await asyncio.gather(*tasks)
-
-    for i, _ in enumerate(report):
+    report = []
+    for i, question in enumerate(questions):
+        report.append(process_question(question))
         progress_bar.progress((i + 1) / len(questions))
 
     logger.info(f"Report generation complete. Total questions processed: {len(report)}")
