@@ -234,21 +234,26 @@ def main():
                             st.error(f"Error saving questionnaire: {str(e)}")
                             logger.exception("Error saving questionnaire")
     
+                # Inside the main function, in the Questionnaires tab
                 with col2:
                     if st.button("Generate Report"):
                         try:
                             with st.spinner("Generating report..."):
                                 documents = pinecone_connection.get_all_documents()
+                                logger.info(f"Retrieved {len(documents)} documents for report generation")
                                 progress_bar = st.progress(0)
                                 report = generate_report(edited_questions, documents, progress_bar)
+                                logger.info(f"Report generated successfully with {len(report)} items")
                             
-                            logger.info(f"Report generated. Attempting to save...")
-                            report_id = pinecone_connection.add_report(f"Report for {st.session_state['current_questionnaire']['title']}", report)
+                            logger.info(f"Attempting to save report...")
+                            report_title = f"Report for {st.session_state['current_questionnaire']['title']}"
+                            logger.info(f"Report title: {report_title}")
+                            report_id = pinecone_connection.add_report(report_title, report)
                             if report_id:
                                 logger.info(f"Report saved successfully with ID: {report_id}")
                                 st.success(f"Report generated and saved successfully. View it in the 'Generated Reports' tab.")
                             else:
-                                logger.error("Failed to save the generated report.")
+                                logger.error("Failed to save the generated report. Returned report_id is None or empty.")
                                 st.error("Failed to save the generated report.")
                         except Exception as e:
                             logger.exception(f"Error generating or saving report: {str(e)}")
