@@ -1,9 +1,8 @@
-# config.py
 import streamlit as st
 import openai
 import pinecone
 import logging
-from secrets import get_secret
+from secret_manager import get_secret
 
 logger = logging.getLogger(__name__)
 
