@@ -8,7 +8,6 @@ import PyPDF2
 import pandas as pd
 import streamlit as st
 import logging
-import asyncio
 import openai
 from functools import partial
 from tenacity import retry, wait_random_exponential, stop_after_attempt
@@ -92,7 +91,7 @@ def manage_questionnaire(pinecone_connection):
             st.subheader("Edit Questionnaire")
             edited_questions = display_questionnaire(questions)
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 if st.button("Save Questionnaire"):
                     try:
@@ -108,17 +107,75 @@ def manage_questionnaire(pinecone_connection):
                     except Exception as e:
                         st.error(f"Error saving questionnaire: {str(e)}")
                         logger.exception("Error saving questionnaire")
+            with col2:
+                if st.button("Generate Report"):
+                    generate_report(pinecone_connection, edited_questions)
+            with col3:
+                if st.button("Create New Questionnaire"):
+                    st.session_state["current_questionnaire"] = {
+                        "title": "New Questionnaire",
+                        "questions": []
+                    }
+                    st.experimental_rerun()
         else:
             st.warning("The current questionnaire has no questions.")
     else:
         st.info("No current questionnaire to display. Please upload a questionnaire from the sidebar or load a saved one.")
     display_saved_questionnaires(pinecone_connection)
-    if st.button("Create New Questionnaire"):
-        st.session_state["current_questionnaire"] = {
-            "title": "New Questionnaire",
-            "questions": []
-        }
-        st.experimental_rerun()
+
+def generate_report(pinecone_connection, questions):
+    if pinecone_connection.test_connection():
+        report = []
+        for question in questions:
+            query_embedding = get_embedding(question['question'])
+            similar_docs = pinecone_connection.get_similar_documents(query_embedding)
+
+            context = "\n".join([text for _, _, text, _ in similar_docs])
+            prompt = f"""
+            Based on the following context, answer the given question. 
+            If the context doesn't contain relevant information for the question, state that the information is not available.
+
+            Question: {question['question']}
+            Answer: """
+
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant that generates detailed answers based on given questions and context."},
+                {"role": "user", "content": prompt}
+            ]
+
+            response = chat_completion(messages)
+            answer = response['choices'][0]['message']['content'].strip()
+
+            report.append({
+                "question": question['question'],
+                "answer": answer,
+                "needs_assignment": "information is not available" in answer.lower()
+            })
+
+        st.session_state["current_report"] = report
+        display_report(report)
+    else:
+        st.error("Cannot generate report: No database connection")
+
+def display_report(report):
+    st.header("Generated Report")
+    for item in report:
+        st.subheader(f"Question: {item['question']}")
+        st.write(f"Answer: {item['answer']}")
+        if item["needs_assignment"]:
+            st.warning("This answer needs further assignment.")
+
+    if st.button("Save Report"):
+        save_report(report)
+
+def save_report(report):
+    report_content = json.dumps(report, indent=4)
+    st.download_button(
+        label="Download Report",
+        data=report_content,
+        file_name="generated_report.json",
+        mime="application/json"
+    )
 
 def display_saved_questionnaires(pinecone_connection):
     st.header("Saved Questionnaires")
@@ -193,8 +250,7 @@ def handle_query(pinecone_connection):
 def main():
     set_page_config()
     
-    # Apply custom CSS
-    st.markdown("""
+    custom_css = """
         <style>
             /* Custom styles for buttons */
             .stButton > button {
@@ -271,15 +327,15 @@ def main():
                 color: white !important;
             }
         </style>
-    """, unsafe_allow_html=True)
-
+    """
+    
+    st.markdown(custom_css, unsafe_allow_html=True)
     st.title("DUE: Document Understanding Engine")
 
     pinecone_connection = initialize_app()
     if pinecone_connection is None:
         return
 
-    # Sidebar: Knowledge Base Upload
     st.sidebar.header("Add Content to Knowledge Base")
     kb_files = st.sidebar.file_uploader("Choose file(s) to upload to Knowledge Base", 
                                         type=["txt", "pdf", "docx", "xlsx", "xls"], 
@@ -287,25 +343,20 @@ def main():
     if kb_files and st.sidebar.button("Process Knowledge Base File(s)"):
         upload_files_to_kb(pinecone_connection, kb_files)
 
-    # Sidebar: Questionnaire Upload
     st.sidebar.header("Upload Questionnaire/Form")
     uploaded_form = st.sidebar.file_uploader("Choose a form/questionnaire to upload", 
                                              type=["pdf", "docx", "txt", "xlsx", "xls"])
     if uploaded_form and st.sidebar.button("Process Questionnaire"):
         process_uploaded_form(uploaded_form)
 
-    # Main area tabs
     kb_tab, questionnaire_tab, query_tab = st.tabs(["Knowledge Base", "Questionnaires", "Ask a Question"])
 
-    # Knowledge Base tab
     with kb_tab:
         display_kb_documents(pinecone_connection)
 
-    # Questionnaires tab
     with questionnaire_tab:
         manage_questionnaire(pinecone_connection)
 
-    # Ask a Question tab
     with query_tab:
         handle_query(pinecone_connection)
 
