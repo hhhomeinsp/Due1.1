@@ -1,0 +1,8 @@
+streamlit
+openai
+pinecone-client
+python-docx
+PyPDF2
+pandas
+openpyxl
+tenacity
