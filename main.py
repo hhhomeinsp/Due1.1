@@ -28,6 +28,7 @@ def initialize_app():
     openai.api_key = get_secret("OPENAI_API_KEY")
     if not openai.api_key:
         st.error("OpenAI API key is not set. Some features may not work.")
+        return None
 
     pinecone_index = initialize_pinecone()
     if pinecone_index is None:
@@ -127,30 +128,34 @@ def generate_report(pinecone_connection, questions):
     if pinecone_connection.test_connection():
         report = []
         for question in questions:
-            query_embedding = get_embedding(question['question'])
-            similar_docs = pinecone_connection.get_similar_documents(query_embedding)
+            try:
+                query_embedding = get_embedding(question['question'])
+                similar_docs = pinecone_connection.get_similar_documents(query_embedding)
 
-            context = "\n".join([text for _, _, text, _ in similar_docs])
-            prompt = f"""
-            Based on the following context, answer the given question. 
-            If the context doesn't contain relevant information for the question, state that the information is not available.
+                context = "\n".join([text for _, _, text, _ in similar_docs])
+                prompt = f"""
+                Based on the following context, answer the given question. 
+                If the context doesn't contain relevant information for the question, state that the information is not available.
 
-            Question: {question['question']}
-            Answer: """
+                Question: {question['question']}
+                Answer: """
 
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant that generates detailed answers based on given questions and context."},
-                {"role": "user", "content": prompt}
-            ]
+                messages = [
+                    {"role": "system", "content": "You are a helpful assistant that generates detailed answers based on given questions and context."},
+                    {"role": "user", "content": prompt}
+                ]
 
-            response = chat_completion(messages)
-            answer = response['choices'][0]['message']['content'].strip()
+                response = chat_completion(messages)
+                answer = response['choices'][0]['message']['content'].strip()
 
-            report.append({
-                "question": question['question'],
-                "answer": answer,
-                "needs_assignment": "information is not available" in answer.lower()
-            })
+                report.append({
+                    "question": question['question'],
+                    "answer": answer,
+                    "needs_assignment": "information is not available" in answer.lower()
+                })
+            except Exception as e:
+                logger.error(f"Error generating report for question '{question['question']}': {str(e)}")
+                st.error(f"Error generating report for question '{question['question']}': {str(e)}")
 
         st.session_state["current_report"] = report
         display_report(report)
