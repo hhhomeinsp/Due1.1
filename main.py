@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 import logging
 import asyncio
+import openai
 from functools import partial
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
