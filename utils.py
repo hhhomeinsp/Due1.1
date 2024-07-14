@@ -19,7 +19,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
     embedding = response['data'][0]['embedding']
     return embedding  # The embedding should naturally be 1536 dimensions
 
-def chat_completion(messages, model="gpt-4"):
+def chat_completion(messages, model="gpt-4o"):
     try:
         response = openai.ChatCompletion.create(model=model, messages=messages)
         return response
