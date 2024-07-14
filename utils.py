@@ -6,7 +6,7 @@ import pandas as pd
 import io
 import logging
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from secrets import get_secret
+from secret_manager import get_secret
 
 logger = logging.getLogger(__name__)
 
