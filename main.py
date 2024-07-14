@@ -131,16 +131,6 @@ def main():
 
     st.title("DUE: Document Understanding Engine")
 
-    # Test secrets retrieval
-    openai_api_key = get_secret("OPENAI_API_KEY")
-    pinecone_api_key = get_secret("PINECONE_API_KEY")
-    if not openai_api_key or not pinecone_api_key:
-        st.error("API keys not set. Please check your .streamlit/secrets.toml file.")
-        return
-
-    # Existing code
-    openai.api_key = openai_api_key
-
     # Set up OpenAI API
     openai.api_key = get_secret("OPENAI_API_KEY")
     if not openai.api_key:
