@@ -15,7 +15,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from pinecone_integration import initialize_pinecone, PineconeConnection
 from file_processing import extract_text_from_file
-from utils import get_secret, get_embedding, chat_completion, display_questionnaire, generate_report
+from utils import get_secret, get_embedding, chat_completion, display_questionnaire
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,28 +24,6 @@ PINECONE_DIMENSION = 1536  # Set this to match your index dimension
 
 def set_page_config():
     st.set_page_config(page_title="DUE: Document Understanding Engine", layout="wide")
-
-def display_reports_tab(pinecone_connection):
-    st.header("Generated Reports")
-    reports = pinecone_connection.get_all_reports()
-    if reports:
-        for report in reports:
-            with st.expander(f"Report: {report['title']}"):
-                for i, qa in enumerate(report['report'], 1):
-                    with st.expander(f"Q{i}: {qa['question']}"):
-                        st.write("Answer:", qa['answer'])
-                        if qa['needs_assignment']:
-                            if st.button(f"Assign for Manual Answer", key=f"assign_{report['id']}_{i}"):
-                                st.info("This feature will be implemented in the future.")
-                
-                if st.button("Delete Report", key=f"delete_report_{report['id']}"):
-                    if pinecone_connection.delete_report(report['id']):
-                        st.success(f"Report '{report['title']}' deleted successfully.")
-                        st.experimental_rerun()
-                    else:
-                        st.error(f"Failed to delete report '{report['title']}'.")
-    else:
-        st.info("No reports available. Generate a report from a processed questionnaire to see it here.")
 
 def main():
     set_page_config()
@@ -182,7 +160,7 @@ def main():
                 logger.exception("Error in questionnaire processing")
 
     # Main area tabs
-    kb_tab, questionnaire_tab, reports_tab, query_tab = st.tabs(["Knowledge Base", "Questionnaires", "Generated Reports", "Ask a Question"])
+    kb_tab, questionnaire_tab, query_tab = st.tabs(["Knowledge Base", "Questionnaires", "Ask a Question"])
 
     # Knowledge Base tab
     with kb_tab:
@@ -234,25 +212,6 @@ def main():
                             st.error(f"Error saving questionnaire: {str(e)}")
                             logger.exception("Error saving questionnaire")
     
-                with col2:
-                    if st.button("Generate Report"):
-                        try:
-                            with st.spinner("Generating report..."):
-                                documents = pinecone_connection.get_all_documents()
-                                progress_bar = st.progress(0)
-                                report = asyncio.run(generate_report(edited_questions, documents, progress_bar))
-                            
-                            logger.info(f"Report generated. Attempting to save...")
-                            report_id = pinecone_connection.add_report(f"Report for {st.session_state['current_questionnaire']['title']}", report)
-                            if report_id:
-                                logger.info(f"Report saved successfully with ID: {report_id}")
-                                st.success(f"Report generated and saved successfully. View it in the 'Generated Reports' tab.")
-                            else:
-                                logger.error("Failed to save the generated report.")
-                                st.error("Failed to save the generated report.")
-                        except Exception as e:
-                            logger.exception(f"Error generating or saving report: {str(e)}")
-                            st.error(f"Error generating or saving report: {str(e)}")
             else:
                 st.warning("The current questionnaire has no questions.")
         else:
@@ -295,10 +254,6 @@ def main():
             }
             st.experimental_rerun()
         
-    # Reports tab
-    with reports_tab:
-        display_reports_tab(pinecone_connection)
-
     # Ask a Question tab
     with query_tab:
         st.header("Ask a Question")
