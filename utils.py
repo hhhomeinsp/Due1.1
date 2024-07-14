@@ -77,3 +77,36 @@ def display_questionnaire(questions, prefix=""):
         })
     
     return edited_questions
+
+async def generate_report(questions, documents, progress_bar):
+    context = "\n".join([f"Title: {doc['title']}\n{doc['text']}" for doc in documents])
+    
+    async def process_question(question):
+        try:
+            prompt = f"""
+            Based on the following context, answer the given question. 
+            If the context doesn't contain relevant information for the question, state that the information is not available.
+
+            Context: {context[:3000]}  # Limiting context to 3000 characters
+
+            Question: {question['question']}
+            Answer: """
+            
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant that generates detailed answers based on given questions and context."},
+                {"role": "user", "content": prompt}
+            ]
+            
+            response = await asyncio.to_thread(partial(chat_completion, messages))
+            answer = response['choices'][0]['message']['content'].strip()
+            return {
+                "question": question['question'],
+                "answer": answer,
+                "needs_assignment": "information is not available" in answer.lower()
+            }
+        except Exception as e:
+            logger.error(f"Error generating answer for question '{question['question']}': {str(e)}")
+            return {
+                "question": question['question'],
+                "answer": f"An error occurred while generating the answer: {str(e)}",
+                "needs_assignment":
